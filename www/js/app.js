@@ -269,6 +269,7 @@ function pintarDatos() {
             });
             const j = await r.json();
             if (!j.ok) throw new Error(j.error || 'No se pudo enviar');
+            guardarEnHistorial(j.codigo, totalCarrito());
             carrito = [];
             guardarCarrito();
             localStorage.setItem('kebat_pedido', j.codigo);
@@ -279,6 +280,45 @@ function pintarDatos() {
             $('#d-enviar').textContent = 'Enviar pedido — ' + eur(totalCarrito());
         }
     };
+    window.scrollTo(0, 0);
+}
+
+// ---------- mis pedidos (historial del móvil) ----------
+
+// Los últimos 20 pedidos hechos desde este móvil; al picar uno se ve su estado
+function guardarEnHistorial(codigo, total) {
+    const lista = JSON.parse(localStorage.getItem('kebat_historial') || '[]');
+    lista.unshift({ codigo, fecha: new Date().toISOString(), total });
+    localStorage.setItem('kebat_historial', JSON.stringify(lista.slice(0, 20)));
+}
+
+let desdeMisPedidos = false;        // para que «atrás» desde el estado vuelva a la lista
+
+function pintarMisPedidos() {
+    pantalla = 'mis-pedidos';
+    desdeMisPedidos = false;
+    cabecera('Mis pedidos', true);
+    pintarBarraCarrito();
+    const lista = JSON.parse(localStorage.getItem('kebat_historial') || '[]');
+    if (!lista.length) {
+        vista.innerHTML = '<div class="vacio">Aún no has hecho ningún pedido desde este móvil.</div>';
+        return;
+    }
+    vista.innerHTML = lista.map((p, i) => {
+        const d = new Date(p.fecha);
+        const f = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) + ' ' +
+            d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        return `
+        <button class="mp-fila" data-mp="${i}">
+            <span class="mp-cod">${esc(p.codigo)}</span>
+            <span class="mp-fecha">${f}</span>
+            <span class="mp-total">${eur(p.total)}</span>
+            <span class="mp-ir">›</span>
+        </button>`;
+    }).join('');
+    vista.querySelectorAll('[data-mp]').forEach((b) => {
+        b.onclick = () => { desdeMisPedidos = true; pintarEstado(lista[b.dataset.mp].codigo); };
+    });
     window.scrollTo(0, 0);
 }
 
@@ -441,6 +481,7 @@ async function buscarActualizacion() {
 const SERVIDOR_DESCARGAS_LATEST = 'https://descargas.dnns.es/qqpk519rg6/kebat/latest.json';
 
 $('#ajustes').onclick = pintarAjustes;
+$('#mis-pedidos').onclick = () => { clearInterval(sondeo); clearInterval(repSondeo); pintarMisPedidos(); };
 
 // ---------- modo repartidor ----------
 // Oculto para clientes: 5 toques en el título. Usa la clave del panel del local.
@@ -560,9 +601,10 @@ $('#atras').onclick = () => atras();
 barraCarrito.onclick = pintarCarrito;
 
 function atras() {
+    if (pantalla === 'estado' && desdeMisPedidos) { clearInterval(sondeo); pintarMisPedidos(); return true; }
     if (pantalla === 'carrito' || pantalla === 'estado') { clearInterval(sondeo); pintarCarta(); return true; }
     if (pantalla === 'datos') { pintarCarrito(); return true; }
-    if (pantalla === 'ajustes') { pintarCarta(); return true; }
+    if (pantalla === 'ajustes' || pantalla === 'mis-pedidos') { pintarCarta(); return true; }
     if (pantalla === 'repartidor') { clearInterval(repSondeo); pintarCarta(); return true; }
     return false;           // en la carta: Android manda la app a segundo plano
 }
