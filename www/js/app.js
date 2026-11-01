@@ -225,6 +225,7 @@ function pintarDatos() {
         <div class="campo"><label>Tu nombre</label><input id="d-nombre" value="${esc(d.nombre || '')}" autocomplete="name"></div>
         <div class="campo"><label>Teléfono (por si hay dudas con el pedido)</label><input id="d-telefono" type="tel" value="${esc(d.telefono || '')}" autocomplete="tel"></div>
         <div class="campo"><label>Dirección (calle, número, piso)</label><input id="d-direccion" value="${esc(d.direccion || '')}" autocomplete="street-address"></div>
+        <div class="campo"><label>Población</label><input id="d-poblacion" value="${esc(d.poblacion || '')}" autocomplete="address-level2"></div>
         <div class="campo"><label>Notas (opcional: timbre, portal, sin cebolla…)</label><textarea id="d-notas"></textarea></div>
         <button class="btn gps" id="d-gps">📍 Adjuntar mi ubicación GPS</button>
         <button class="btn principal" id="d-enviar">Enviar pedido — ${eur(totalCarrito())}</button>
@@ -247,9 +248,10 @@ function pintarDatos() {
             nombre: $('#d-nombre').value.trim(),
             telefono: $('#d-telefono').value.trim(),
             direccion: $('#d-direccion').value.trim(),
+            poblacion: $('#d-poblacion').value.trim(),
         };
-        if (!datos.nombre || !datos.telefono || !datos.direccion) {
-            $('#d-error').textContent = 'Faltan el nombre, el teléfono o la dirección.';
+        if (!datos.nombre || !datos.telefono || !datos.direccion || !datos.poblacion) {
+            $('#d-error').textContent = 'Faltan el nombre, el teléfono, la dirección o la población.';
             return;
         }
         localStorage.setItem('kebat_datos', JSON.stringify(datos));
@@ -392,7 +394,7 @@ async function pintarRepartidor() {
                 <span class="etiqueta-rep">${p.estado === 'reparto' ? '🛵 En reparto' : '👨‍🍳 En cocina'}</span>
                 <span class="rep-total">${eur(p.total)}</span>
             </div>
-            <div class="rep-dir">📍 ${esc(p.direccion)}</div>
+            <div class="rep-dir">📍 ${esc(p.direccion)}${p.poblacion ? ', ' + esc(p.poblacion) : ''}</div>
             ${p.notas ? `<div class="rep-notas">📝 ${esc(p.notas)}</div>` : ''}
             <div class="rep-cli">👤 ${esc(p.nombre)}</div>
             <div class="rep-botones">
@@ -460,4 +462,10 @@ const pendiente = localStorage.getItem('kebat_pedido');
 (async () => {
     await cargarCarta();
     if (pendiente && carta) pintarEstado(pendiente);
+    // Permiso de ubicación al primer arranque (el sistema no deja pedirlo al
+    // instalar): así al enviar el pedido ya está concedido y no corta el paso
+    if (!localStorage.getItem('kebat_gps_pedido')) {
+        localStorage.setItem('kebat_gps_pedido', '1');
+        navigator.geolocation?.getCurrentPosition(() => {}, () => {}, { timeout: 8000, maximumAge: 600000 });
+    }
 })();
