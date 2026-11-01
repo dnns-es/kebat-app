@@ -543,9 +543,11 @@ async function pintarRepartidor() {
     pintarBarraCarrito();
     clearInterval(repSondeo);
     repSondeo = setInterval(() => { if (pantalla === 'repartidor') pintarRepartidor(); }, 15000);
-    let pedidos;
+    let pedidos, numRep = 1;
     try {
-        pedidos = (await apiPanel('pedidos')).pedidos.filter((p) => ['preparando', 'reparto'].includes(p.estado));
+        const j = await apiPanel('pedidos');
+        numRep = j.repartidores || 1;
+        pedidos = j.pedidos.filter((p) => ['preparando', 'reparto'].includes(p.estado));
     } catch (e) {
         clearInterval(repSondeo);
         if (String(e.message).includes('entrar')) return repEntrar();
@@ -579,11 +581,13 @@ async function pintarRepartidor() {
         </div>`).join('') + salir;
         vista.querySelectorAll('[data-rep]').forEach((b) => {
             b.onclick = async () => {
-                // Aviso anti-olvidos: no llevarse uno dejando atrás otro más antiguo listo
+                // Aviso anti-olvidos: no llevarse uno dejando atrás otro más antiguo listo.
+                // Con varios repartidores solo avisa si no queda otro libre para el antiguo.
                 if (b.dataset.est === 'reparto') {
                     const p = pedidos.find((x) => x.id === parseInt(b.dataset.rep));
                     const antes = pedidos.find((x) => x.estado === 'preparando' && x.id !== p.id && new Date(x.fecha) < new Date(p.fecha));
-                    if (antes && !confirm('Ojo: el ' + antes.codigo + ' lleva más tiempo esperando.\n¿Seguro que te llevas este primero?')) return;
+                    const libres = numRep - pedidos.filter((x) => x.estado === 'reparto').length;
+                    if (antes && libres <= 1 && !confirm('Ojo: el ' + antes.codigo + ' lleva más tiempo esperando.\n¿Seguro que te llevas este primero?')) return;
                 }
                 b.disabled = true;
                 try { await apiPanel('estado', { id: parseInt(b.dataset.rep), estado: b.dataset.est }); pintarRepartidor(); }
