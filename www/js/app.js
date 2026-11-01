@@ -196,7 +196,8 @@ function pintarCarrito() {
             <div class="importe">${eur(precioLinea(l))}</div>
         </div>`;
     }).join('') + `
-        <div class="total-caja"><span>Total</span><span>${eur(totalCarrito())}</span></div>
+        ${carta.envio ? `<div class="linea"><div class="datos"><div class="nombre">🛵 Envío a domicilio</div></div><div class="importe">${eur(carta.envio)}</div></div>` : ''}
+        <div class="total-caja"><span>Total</span><span>${eur(totalCarrito() + (carta.envio || 0))}</span></div>
         <button class="btn principal" id="finalizar" ${carta.abierto ? '' : 'disabled'}>${carta.abierto ? 'Finalizar pedido' : 'Cerrado ahora mismo'}</button>
         <button class="btn secundario" id="seguir">Añadir más cosas</button>`;
     vista.querySelectorAll('[data-mas]').forEach((b) => {
@@ -228,7 +229,7 @@ function pintarDatos() {
         <div class="campo"><label>Población</label><input id="d-poblacion" value="${esc(d.poblacion || '')}" autocomplete="address-level2"></div>
         <div class="campo"><label>Notas (opcional: timbre, portal, sin cebolla…)</label><textarea id="d-notas"></textarea></div>
         <button class="btn gps" id="d-gps">📍 Adjuntar mi ubicación GPS</button>
-        <button class="btn principal" id="d-enviar">Enviar pedido — ${eur(totalCarrito())}</button>
+        <button class="btn principal" id="d-enviar">Enviar pedido — ${eur(totalCarrito() + (carta.envio || 0))}</button>
         <div id="d-error" class="error-red" style="padding:10px"></div>`;
     let pos = null;
     $('#d-gps').onclick = async () => {
@@ -269,7 +270,7 @@ function pintarDatos() {
             });
             const j = await r.json();
             if (!j.ok) throw new Error(j.error || 'No se pudo enviar');
-            guardarEnHistorial(j.codigo, totalCarrito());
+            guardarEnHistorial(j.codigo, j.total);        // el total bueno lo dice el servidor
             carrito = [];
             guardarCarrito();
             localStorage.setItem('kebat_pedido', j.codigo);
@@ -543,11 +544,11 @@ async function pintarRepartidor() {
     pintarBarraCarrito();
     clearInterval(repSondeo);
     repSondeo = setInterval(() => { if (pantalla === 'repartidor') pintarRepartidor(); }, 15000);
-    let pedidos, numRep = 1;
+    let pedidos;
     try {
         const j = await apiPanel('pedidos');
-        numRep = j.repartidores || 1;
-        pedidos = j.pedidos.filter((p) => ['preparando', 'reparto'].includes(p.estado));
+        repNum = j.repartidores || 1;
+        pedidos = repPedidos = j.pedidos.filter((p) => ['preparando', 'reparto'].includes(p.estado));
     } catch (e) {
         clearInterval(repSondeo);
         if (String(e.message).includes('entrar')) return repEntrar();
@@ -580,19 +581,11 @@ async function pintarRepartidor() {
                 : `<button class="btn llevar" data-rep="${p.id}" data-est="reparto">🛵 Lo llevo yo</button>`}
         </div>`).join('') + salir;
         vista.querySelectorAll('[data-rep]').forEach((b) => {
-            b.onclick = async () => {
-                // Aviso anti-olvidos: no llevarse uno dejando atrás otro más antiguo listo.
-                // Con varios repartidores solo avisa si no queda otro libre para el antiguo.
-                if (b.dataset.est === 'reparto') {
-                    const p = pedidos.find((x) => x.id === parseInt(b.dataset.rep));
-                    const antes = pedidos.find((x) => x.estado === 'preparando' && x.id !== p.id && new Date(x.fecha) < new Date(p.fecha));
-                    const libres = numRep - pedidos.filter((x) => x.estado === 'reparto').length;
-                    if (antes && libres <= 1 && !confirm('Ojo: el ' + antes.codigo + ' lleva más tiempo esperando.\n¿Seguro que te llevas este primero?')) return;
-                }
-                b.disabled = true;
-                try { await apiPanel('estado', { id: parseInt(b.dataset.rep), estado: b.dataset.est }); pintarRepartidor(); }
-                catch (e) { alert(e.message); b.disabled = false; }
-            };
+            b.onclick = () => cambiarEstadoRep(parseInt(b.dataset.rep), b.dataset.est, b);
+        });
+        // Tocar la tarjeta (fuera de botones y enlaces) abre el pedido como ticket
+        vista.querySelectorAll('.rep-card').forEach((c, i) => {
+            c.onclick = (e) => { if (e.target.closest('button, a')) return; pintarTicket(pedidos[i].id); };
         });
     }
     $('#r-salir').onclick = () => {
@@ -601,6 +594,64 @@ async function pintarRepartidor() {
         clearInterval(repSondeo);
         pintarCarta();
     };
+    window.scrollTo(0, 0);
+}
+
+let repPedidos = [];        // última lista cargada: la usa el ticket
+let repNum = 1;             // repartidores trabajando (lo fija el panel)
+
+// Cambia el estado desde la lista o desde el ticket, con el aviso anti-olvidos:
+// no llevarse un pedido dejando atrás otro más antiguo listo, salvo que quede
+// otro repartidor libre para él.
+async function cambiarEstadoRep(id, est, boton) {
+    if (est === 'reparto') {
+        const p = repPedidos.find((x) => x.id === id);
+        const antes = repPedidos.find((x) => x.estado === 'preparando' && x.id !== id && new Date(x.fecha) < new Date(p.fecha));
+        const libres = repNum - repPedidos.filter((x) => x.estado === 'reparto').length;
+        if (antes && libres <= 1 && !confirm('Ojo: el ' + antes.codigo + ' lleva más tiempo esperando.\n¿Seguro que te llevas este primero?')) return;
+    }
+    if (boton) boton.disabled = true;
+    try { await apiPanel('estado', { id, estado: est }); pintarRepartidor(); }
+    catch (e) { alert(e.message); if (boton) boton.disabled = false; }
+}
+
+// El pedido abierto a pantalla completa, como un ticket de caja
+function pintarTicket(id) {
+    const p = repPedidos.find((x) => x.id === id);
+    if (!p) return pintarRepartidor();
+    pantalla = 'ticket';
+    clearInterval(repSondeo);
+    cabecera('Pedido ' + p.codigo, true);
+    const d = new Date(p.fecha);
+    vista.innerHTML = `
+    <div class="ticket">
+        <div class="tk-cab"><b>${esc(p.codigo)}</b>
+            <span class="etiqueta-rep">${p.estado === 'reparto' ? '🛵 En reparto' : '📦 Listo para llevar'}</span>
+            <span>${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span></div>
+        <div class="tk-raya"></div>
+        ${p.lineas.map((l) => `
+            <div class="tk-linea"><span class="tk-cant">${l.cant} ×</span><span class="tk-nom">${esc(l.nombre)}</span><span class="tk-imp">${eur((l.precio + (l.extra || 0)) * l.cant)}</span></div>
+            ${l.opciones?.length ? `<div class="tk-op">${esc(l.opciones.join(' · '))}</div>` : ''}`).join('')}
+        ${p.envio ? `<div class="tk-linea"><span class="tk-cant"></span><span class="tk-nom">🛵 Envío</span><span class="tk-imp">${eur(p.envio)}</span></div>` : ''}
+        <div class="tk-raya"></div>
+        <div class="tk-total"><span>TOTAL</span><span>${eur(p.total)}</span></div>
+        ${p.notas ? `<div class="rep-notas">📝 ${esc(p.notas)}</div>` : ''}
+        <div class="tk-raya"></div>
+        <div class="tk-cli">👤 ${esc(p.nombre)} · ${esc(p.telefono)}</div>
+        <div class="rep-dir">📍 ${esc(p.direccion)}${p.poblacion ? ', ' + esc(p.poblacion) : ''}</div>
+        <div class="rep-botones">
+            <a class="btn tel-grande" href="tel:${esc(p.telefono)}">📞 Llamar</a>
+            ${p.lat != null && p.lng != null
+                ? `<a class="btn maps-grande" href="geo:${p.lat},${p.lng}?q=${p.lat},${p.lng}(Pedido ${esc(p.codigo)})">🗺 Maps</a>`
+                : `<a class="btn maps-grande" href="geo:0,0?q=${encodeURIComponent(p.direccion)}">🗺 Maps</a>`}
+        </div>
+        ${p.estado === 'reparto'
+            ? `<button class="btn entregado" id="tk-est">✓ Entregado</button>`
+            : `<button class="btn llevar" id="tk-est">🛵 Lo llevo yo</button>`}
+        <button class="btn secundario" id="tk-volver" style="margin-top:8px">‹ Volver a los repartos</button>
+    </div>`;
+    $('#tk-est').onclick = (e) => cambiarEstadoRep(p.id, p.estado === 'reparto' ? 'entregado' : 'reparto', e.target);
+    $('#tk-volver').onclick = pintarRepartidor;
     window.scrollTo(0, 0);
 }
 
@@ -626,6 +677,7 @@ function atras() {
     if (pantalla === 'carrito' || pantalla === 'estado') { clearInterval(sondeo); pintarCarta(); return true; }
     if (pantalla === 'datos') { pintarCarrito(); return true; }
     if (pantalla === 'ajustes' || pantalla === 'mis-pedidos') { pintarCarta(); return true; }
+    if (pantalla === 'ticket') { pintarRepartidor(); return true; }
     if (pantalla === 'repartidor') { clearInterval(repSondeo); pintarCarta(); return true; }
     return false;           // en la carta: Android manda la app a segundo plano
 }
