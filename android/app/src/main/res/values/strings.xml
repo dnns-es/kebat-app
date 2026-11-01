@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kebat</string>
+    <string name="title_activity_main">Kebat</string>
+    <string name="package_name">es.dnns.kebat</string>
+    <string name="custom_url_scheme">es.dnns.kebat</string>
+</resources>

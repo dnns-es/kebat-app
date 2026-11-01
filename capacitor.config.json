@@ -1,0 +1,12 @@
+{
+  "appId": "es.dnns.kebat",
+  "appName": "Kebat",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#fff7ec"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

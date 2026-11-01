@@ -1,0 +1,20 @@
+{
+    "name": "kebat",
+    "version": "0.2.0",
+    "private": true,
+    "type": "module",
+    "description": "App de pedidos a domicilio de Kebat: carta, carrito y envío del pedido con la ubicación del cliente",
+    "scripts": {
+        "sync": "cap sync android",
+        "apk": "cap sync android && node herramientas/gradle.mjs assembleDebug",
+        "simulador": "node herramientas/simulador.mjs"
+    },
+    "dependencies": {
+        "@capacitor/android": "^7.4.3",
+        "@capacitor/core": "^7.4.3",
+        "@capacitor/ios": "^7.6.10"
+    },
+    "devDependencies": {
+        "@capacitor/cli": "^7.4.3"
+    }
+}

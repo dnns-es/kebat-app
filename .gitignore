@@ -1,0 +1,15 @@
+# Claves y secretos. Nunca.
+.keys/
+*.jks
+*.keystore
+*.p12
+*.env
+
+node_modules/
+dist/
+build/
+.gradle/
+local.properties
+Thumbs.db
+
+salida/*.apk

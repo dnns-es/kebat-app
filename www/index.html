@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!-- Fecha: 2026-11-01 -->
+<!-- Ruta: F:\APP\kebat\www\index.html -->
+<!-- App de pedidos a domicilio de Kebat (Android, Capacitor): el cliente ve la carta, -->
+<!-- monta su pedido y lo envía con su ubicación GPS; sin registro. -->
+<!-- La carta se descarga de kebat.dnns.es, así el local cambia precios sin sacar app nueva. -->
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src 'self' https: http://10.0.2.2:8787; object-src 'none'; base-uri 'none'">
+    <meta name="theme-color" content="#c0392b">
+    <title>Kebat</title>
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+    <header class="barra" id="barra">
+        <button class="icono" id="atras" aria-label="Atrás" hidden>‹</button>
+        <div class="titulo" id="titulo">Kebat</div>
+        <div class="icono"></div>
+    </header>
+    <main id="vista"></main>
+    <!-- Barra flotante del carrito: se ve mientras eliges de la carta -->
+    <button id="barra-carrito" class="barra-carrito" hidden>
+        <span id="bc-unidades">0</span>
+        <span>Ver pedido</span>
+        <span id="bc-total">0,00 €</span>
+    </button>
+    <script src="js/app.js"></script>
+</body>
+</html>

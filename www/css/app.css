@@ -1,0 +1,187 @@
+/* Fecha: 2026-11-01 */
+/* Ruta: F:\APP\kebat\www\css\app.css */
+/* Estilos de la app Kebat: tema claro cálido (tonos kebab: rojo teja y crema), */
+/* carta por categorías, carrito flotante y formulario de envío. */
+
+:root {
+    --rojo: #c0392b;
+    --rojo-oscuro: #96281b;
+    --crema: #fff7ec;
+    --carton: #f3e3cb;
+    --tinta: #332518;
+    --gris: #8a7a66;
+    --verde: #2e7d32;
+    --ambar: #ef6c00;
+    --blanco: #fff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+/* El display:flex de algunos bloques le ganaría al atributo hidden sin esto */
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: var(--crema); color: var(--tinta);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Barra superior */
+.barra {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--rojo); color: #fff;
+    padding: calc(10px + env(safe-area-inset-top)) 12px 10px; min-height: 56px;
+}
+.barra .titulo { flex: 1; font-size: 20px; font-weight: 700; text-align: center; }
+.barra .icono {
+    width: 40px; height: 40px; border: 0; background: none; color: #fff;
+    font-size: 28px; line-height: 1; border-radius: 10px;
+}
+.barra button.icono:active { background: var(--rojo-oscuro); }
+
+main { padding: 12px 12px 96px; max-width: 560px; margin: 0 auto; }
+
+/* Aviso de local cerrado o mensaje del día */
+.aviso { border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; font-size: 15px; }
+.aviso.cerrado { background: #fdecea; color: var(--rojo-oscuro); border: 1px solid #f5c6c0; }
+.aviso.nota { background: #fff3e0; color: #7a4a00; border: 1px solid #ffe0b2; }
+
+/* Carta */
+.categoria { margin: 18px 0 8px; font-size: 17px; font-weight: 700; color: var(--rojo-oscuro); }
+.producto {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--blanco); border: 1px solid var(--carton);
+    border-radius: 14px; padding: 12px; margin-bottom: 8px;
+}
+.producto .foto { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex: none; }
+.producto .datos { flex: 1; min-width: 0; }
+.producto .nombre { font-weight: 600; font-size: 16px; }
+.producto .desc { font-size: 13px; color: var(--gris); margin-top: 2px; }
+.producto .precio { font-size: 15px; font-weight: 700; margin-top: 4px; }
+.producto.agotado { opacity: .5; }
+.producto.agotado .nombre::after { content: ' · agotado'; color: var(--rojo); font-size: 13px; }
+.cantidad { display: flex; align-items: center; gap: 2px; }
+.cantidad button {
+    width: 38px; height: 38px; border-radius: 10px; border: 0;
+    background: var(--rojo); color: #fff; font-size: 22px; font-weight: 700;
+}
+.cantidad button:disabled { background: var(--carton); color: var(--gris); }
+.cantidad .num { min-width: 28px; text-align: center; font-size: 17px; font-weight: 700; }
+.cantidad.centrada { justify-content: center; gap: 14px; margin: 14px 0 4px; }
+.mas {
+    position: relative; width: 42px; height: 42px; border-radius: 12px; border: 0;
+    background: var(--rojo); color: #fff; font-size: 24px; font-weight: 700; flex: none;
+}
+.mas .puntito {
+    position: absolute; top: -7px; right: -7px; background: var(--verde); color: #fff;
+    border-radius: 10px; min-width: 20px; height: 20px; font-size: 13px; line-height: 20px;
+}
+
+/* Ficha de producto (modal con opciones) */
+.velo {
+    position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.45);
+    display: flex; align-items: flex-end; justify-content: center;
+}
+.modal {
+    background: var(--crema); width: 100%; max-width: 560px;
+    border-radius: 18px 18px 0 0; padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+    max-height: 92vh; overflow: auto;
+}
+.modal-foto { width: 100%; max-height: 180px; object-fit: cover; border-radius: 14px; }
+.modal h2 { margin: 10px 0 2px; font-size: 20px; }
+.modal .desc { color: var(--gris); font-size: 14px; }
+.grupo { margin-top: 14px; }
+.grupo-titulo { font-weight: 700; margin-bottom: 6px; }
+.grupo-titulo small { color: var(--gris); font-weight: 400; }
+.opcion {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--blanco); border: 1px solid var(--carton);
+    border-radius: 10px; padding: 11px 12px; margin-bottom: 6px; font-size: 15px;
+}
+.opcion input { width: 19px; height: 19px; accent-color: var(--rojo); }
+.opcion span:nth-child(2) { flex: 1; }
+.op-precio { color: var(--rojo-oscuro); font-weight: 700; font-size: 14px; }
+
+/* Barra flotante del carrito */
+.barra-carrito {
+    position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 20;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--verde); color: #fff; border: 0; border-radius: 14px;
+    padding: 14px 18px; font-size: 17px; font-weight: 700;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    max-width: 536px; margin: 0 auto;
+}
+.barra-carrito span:first-child {
+    background: rgba(255,255,255,.25); border-radius: 10px; padding: 2px 10px;
+}
+
+/* Carrito y formulario */
+.linea {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--blanco); border: 1px solid var(--carton);
+    border-radius: 14px; padding: 10px 12px; margin-bottom: 8px;
+}
+.linea .datos { flex: 1; min-width: 0; }
+.linea .importe { font-weight: 700; }
+.total-caja {
+    display: flex; justify-content: space-between; font-size: 19px; font-weight: 800;
+    padding: 14px 4px; border-top: 2px solid var(--carton); margin-top: 10px;
+}
+.campo { margin-bottom: 12px; }
+.campo label { display: block; font-size: 14px; color: var(--gris); margin-bottom: 4px; }
+.campo input, .campo textarea {
+    width: 100%; border: 1px solid var(--carton); border-radius: 12px;
+    background: var(--blanco); color: var(--tinta);
+    padding: 12px; font-size: 16px; font-family: inherit;
+}
+.campo textarea { min-height: 70px; resize: vertical; }
+
+.btn {
+    display: block; width: 100%; border: 0; border-radius: 14px;
+    padding: 15px; font-size: 17px; font-weight: 700; margin-top: 10px;
+}
+.btn.principal { background: var(--rojo); color: #fff; }
+.btn.principal:disabled { background: var(--carton); color: var(--gris); }
+.btn.secundario { background: var(--blanco); color: var(--tinta); border: 1px solid var(--carton); }
+.btn.gps { background: #e8f0fe; color: #174ea6; border: 1px solid #c6dafc; }
+.btn.gps.ok { background: #e6f4ea; color: var(--verde); border-color: #b7dfc0; }
+
+/* Estado del pedido */
+.estado-caja { text-align: center; padding: 26px 10px; }
+.estado-caja .emoji { font-size: 56px; }
+.estado-caja h2 { margin: 12px 0 4px; font-size: 22px; }
+.estado-caja .codigo { font-size: 15px; color: var(--gris); }
+.pasos { margin: 22px auto 0; max-width: 300px; text-align: left; }
+.paso { display: flex; gap: 10px; align-items: center; padding: 8px 0; color: var(--gris); }
+.paso.hecho { color: var(--tinta); font-weight: 600; }
+.paso .punto {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--carton); flex: none;
+}
+.paso.hecho .punto { background: var(--verde); }
+
+/* Modo repartidor: tarjetas grandes, letra grande, botones de dedo gordo */
+.rep-card {
+    background: var(--blanco); border: 2px solid var(--carton); border-radius: 16px;
+    padding: 16px; margin-bottom: 14px;
+}
+.rep-card.reparto { border-color: var(--rojo); }
+.rep-cab { display: flex; align-items: center; gap: 10px; font-size: 17px; }
+.etiqueta-rep { font-size: 14px; color: var(--gris); }
+.rep-total { margin-left: auto; font-weight: 800; }
+.rep-dir { font-size: 20px; font-weight: 700; margin: 12px 0 6px; line-height: 1.3; }
+.rep-notas {
+    background: #fff3e0; border: 1px solid #ffe0b2; color: #7a4a00;
+    border-radius: 10px; padding: 10px; font-size: 16px; margin: 8px 0;
+}
+.rep-cli { color: var(--gris); font-size: 15px; margin-bottom: 10px; }
+.rep-botones { display: flex; gap: 10px; }
+.tel-grande, .maps-grande {
+    flex: 1; text-align: center; text-decoration: none; font-size: 18px; padding: 16px 10px;
+}
+.tel-grande { background: #e6f4ea; color: var(--verde); border: 1px solid #b7dfc0; }
+.maps-grande { background: #e8f0fe; color: #174ea6; border: 1px solid #c6dafc; }
+.btn.llevar { background: var(--ambar); color: #fff; }
+.btn.entregado { background: var(--verde); color: #fff; }
+
+.vacio { text-align: center; color: var(--gris); padding: 40px 10px; font-size: 16px; }
+.error-red { text-align: center; color: var(--rojo-oscuro); padding: 30px 10px; }
