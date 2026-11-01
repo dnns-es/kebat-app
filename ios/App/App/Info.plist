@@ -45,5 +45,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Para adjuntar tu ubicación al pedido y que el repartidor te encuentre.</string>
 </dict>
 </plist>
