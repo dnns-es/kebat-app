@@ -579,6 +579,12 @@ async function pintarRepartidor() {
         </div>`).join('') + salir;
         vista.querySelectorAll('[data-rep]').forEach((b) => {
             b.onclick = async () => {
+                // Aviso anti-olvidos: no llevarse uno dejando atrás otro más antiguo listo
+                if (b.dataset.est === 'reparto') {
+                    const p = pedidos.find((x) => x.id === parseInt(b.dataset.rep));
+                    const antes = pedidos.find((x) => x.estado === 'preparando' && x.id !== p.id && new Date(x.fecha) < new Date(p.fecha));
+                    if (antes && !confirm('Ojo: el ' + antes.codigo + ' lleva más tiempo esperando.\n¿Seguro que te llevas este primero?')) return;
+                }
                 b.disabled = true;
                 try { await apiPanel('estado', { id: parseInt(b.dataset.rep), estado: b.dataset.est }); pintarRepartidor(); }
                 catch (e) { alert(e.message); b.disabled = false; }
