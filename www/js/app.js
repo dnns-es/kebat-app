@@ -555,6 +555,35 @@ function atras() {
     return false;           // en la carta: Android manda la app a segundo plano
 }
 
+// Al abrir la app: si hay versión nueva, franja verde bajo la cabecera.
+// Android: al tocarla descarga e instala. iPhone: abre la página de instalación.
+async function avisarActualizacionAlAbrir() {
+    const franja = document.getElementById('aviso-act');
+    try {
+        if (plataforma() === 'android' && pluginUpdate()) {
+            const ultima = await pluginUpdate().consultar();
+            const puesta = await pluginUpdate().version();
+            if ((ultima.versionCode || 0) <= (puesta.versionCode || 0)) return;
+            franja.textContent = '⬇ Hay versión nueva (' + ultima.version + '). Toca para actualizar';
+            franja.hidden = false;
+            franja.onclick = async () => {
+                franja.textContent = 'Descargando… Android te pedirá confirmar.';
+                try { await pluginUpdate().instalar({ url: ultima.url || ultima.apk, sha256: ultima.sha256 }); }
+                catch (e) { franja.textContent = '⚠ ' + e.message; }
+            };
+        } else if (plataforma() === 'ios') {
+            const j = await (await fetch(SERVIDOR_DESCARGAS_LATEST, { cache: 'no-store' })).json();
+            const x = String(j.version || '0').split('.').map(Number), y = VERSION_WWW.split('.').map(Number);
+            let nueva = false;
+            for (let i = 0; i < 3; i++) { if ((x[i] || 0) > (y[i] || 0)) { nueva = true; break; } if ((x[i] || 0) < (y[i] || 0)) break; }
+            if (!nueva) return;
+            franja.textContent = '⬇ Hay versión nueva (' + j.version + '). Toca para actualizar';
+            franja.hidden = false;
+            franja.onclick = () => window.open(PAGINA_IOS, '_blank');
+        }
+    } catch { /* sin red o sin datos: no se molesta */ }
+}
+
 // El botón atrás de Android llama aquí (ver MainActivity.java)
 const App = { atras };
 
@@ -571,6 +600,7 @@ const pendiente = localStorage.getItem('kebat_pedido');
     if (pendiente && carta) pintarEstado(pendiente);
     // Permiso de ubicación al primer arranque (el sistema no deja pedirlo al
     // instalar): así al enviar el pedido ya está concedido y no corta el paso
+    avisarActualizacionAlAbrir();
     if (!localStorage.getItem('kebat_gps_pedido2')) {
         localStorage.setItem('kebat_gps_pedido2', '1');
         try { await obtenerPosicion(); } catch { /* si lo deniega, el formulario lo reintenta */ }
