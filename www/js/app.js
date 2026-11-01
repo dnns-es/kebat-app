@@ -311,11 +311,22 @@ function pintarMisPedidos() {
         return `
         <button class="mp-fila" data-mp="${i}">
             <span class="mp-cod">${esc(p.codigo)}</span>
+            <span class="mp-est" data-est="${esc(p.codigo)}"></span>
             <span class="mp-fecha">${f}</span>
             <span class="mp-total">${eur(p.total)}</span>
             <span class="mp-ir">›</span>
         </button>`;
     }).join('');
+    // El estado de cada pedido se consulta aparte: colorea la fila al llegar
+    const NOMBRE_EST = { nuevo: 'Recibido', cocina: 'En cocina', preparando: 'Preparando', reparto: 'En camino', entregado: 'Entregado', anulado: 'Anulado' };
+    lista.forEach(async (p) => {
+        try {
+            const j = await (await fetch(API + '?accion=estado&codigo=' + encodeURIComponent(p.codigo))).json();
+            const s = vista.querySelector('[data-est="' + CSS.escape(p.codigo) + '"]');
+            if (!s) return;                             // ya no estamos en esta pantalla
+            if (j.ok) { s.textContent = NOMBRE_EST[j.estado] || j.estado; s.classList.add(j.estado); }
+        } catch { /* sin red: la fila queda sin etiqueta */ }
+    });
     vista.querySelectorAll('[data-mp]').forEach((b) => {
         b.onclick = () => { desdeMisPedidos = true; pintarEstado(lista[b.dataset.mp].codigo); };
     });
