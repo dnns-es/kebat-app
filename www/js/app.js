@@ -380,8 +380,12 @@ async function buscarActualizacion() {
                 estado.textContent = '✓ Tienes la última versión (' + puesta.version + ').';
                 return;
             }
-            estado.textContent = 'Descargando la ' + ultima.version + '… Android te pedirá confirmar.';
-            await pluginUpdate().instalar({ url: ultima.url || ultima.apk, sha256: ultima.sha256 });
+            estado.innerHTML = '<button class="btn actualizar" id="aj-actualizar">⬇ Actualizar a la ' + esc(ultima.version) + '</button>';
+            $('#aj-actualizar').onclick = async () => {
+                estado.textContent = 'Descargando la ' + ultima.version + '… Android te pedirá confirmar.';
+                try { await pluginUpdate().instalar({ url: ultima.url || ultima.apk, sha256: ultima.sha256 }); }
+                catch (e) { estado.textContent = '⚠ ' + e.message; }
+            };
         } else if (plataforma() === 'ios') {
             const r = await fetch(SERVIDOR_DESCARGAS_LATEST, { cache: 'no-store' });
             const j = await r.json();
@@ -394,8 +398,7 @@ async function buscarActualizacion() {
             if (!esMasNueva(j.version || '0', VERSION_WWW)) {
                 estado.textContent = '✓ Tienes la última versión (' + VERSION_WWW + ').';
             } else {
-                estado.innerHTML = 'Hay versión nueva (' + esc(j.version) + '). ' +
-                    '<a href="' + PAGINA_IOS + '" target="_blank" rel="noopener">Abrir la página de instalación</a>';
+                estado.innerHTML = '<a class="btn actualizar" href="' + PAGINA_IOS + '" target="_blank" rel="noopener">⬇ Actualizar a la ' + esc(j.version) + '</a>';
             }
         } else {
             estado.textContent = 'En el navegador no hace falta: siempre ves la última.';
