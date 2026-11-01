@@ -324,6 +324,73 @@ function pintarEstado(codigo, estado) {
     window.scrollTo(0, 0);
 }
 
+// ---------- ajustes ----------
+// Versión instalada, buscar actualización y llamar al local.
+// Android: el plugin KebatUpdate descarga el APK y abre el instalador.
+// iPhone (Ad Hoc): no puede instalarse sola; se lleva a la página de instalación.
+
+const VERSION_WWW = '0.3.0';
+const PAGINA_IOS = 'https://descargas.dnns.es/7701cf39d1/kebat-ios/';
+
+function plataforma() { return window.Capacitor?.getPlatform?.() || 'web'; }
+function pluginUpdate() { return window.Capacitor?.Plugins?.KebatUpdate; }
+
+async function pintarAjustes() {
+    pantalla = 'ajustes';
+    cabecera('Ajustes', true);
+    pintarBarraCarrito();
+    let version = VERSION_WWW;
+    try { if (pluginUpdate()) version = (await pluginUpdate().version()).version; } catch { /* la www vale */ }
+    const telefono = carta?.telefono || '';
+    vista.innerHTML = `
+        <div class="tarjeta-aj">
+            <div class="aj-fila"><span>Versión instalada</span><b>${esc(version)}</b></div>
+            <button class="btn secundario" id="aj-buscar">🔄 Buscar actualización</button>
+            <div id="aj-estado" class="aj-estado"></div>
+        </div>
+        ${telefono ? `
+        <div class="tarjeta-aj">
+            <div class="aj-fila"><span>¿Dudas con tu pedido?</span></div>
+            <a class="btn gps" style="text-align:center;text-decoration:none" href="tel:${esc(telefono)}">📞 Llamar al local</a>
+        </div>` : ''}
+        <p class="aj-pie">Kebat · pedidos a domicilio</p>`;
+    $('#aj-buscar').onclick = buscarActualizacion;
+    window.scrollTo(0, 0);
+}
+
+async function buscarActualizacion() {
+    const estado = $('#aj-estado');
+    estado.textContent = 'Comprobando…';
+    try {
+        if (plataforma() === 'android' && pluginUpdate()) {
+            const ultima = await pluginUpdate().consultar();
+            const puesta = await pluginUpdate().version();
+            if ((ultima.versionCode || 0) <= (puesta.versionCode || 0)) {
+                estado.textContent = '✓ Tienes la última versión (' + puesta.version + ').';
+                return;
+            }
+            estado.textContent = 'Descargando la ' + ultima.version + '… Android te pedirá confirmar.';
+            await pluginUpdate().instalar({ url: ultima.url || ultima.apk, sha256: ultima.sha256 });
+        } else if (plataforma() === 'ios') {
+            const r = await fetch(SERVIDOR_DESCARGAS_LATEST, { cache: 'no-store' });
+            const j = await r.json();
+            if ((j.version || '') === VERSION_WWW) {
+                estado.textContent = '✓ Tienes la última versión (' + VERSION_WWW + ').';
+            } else {
+                estado.innerHTML = 'Hay versión nueva (' + esc(j.version) + '). ' +
+                    '<a href="' + PAGINA_IOS + '" target="_blank" rel="noopener">Abrir la página de instalación</a>';
+            }
+        } else {
+            estado.textContent = 'En el navegador no hace falta: siempre ves la última.';
+        }
+    } catch (e) {
+        estado.textContent = '⚠ ' + (e.message || 'No se pudo comprobar.');
+    }
+}
+const SERVIDOR_DESCARGAS_LATEST = 'https://descargas.dnns.es/qqpk519rg6/kebat/latest.json';
+
+$('#ajustes').onclick = pintarAjustes;
+
 // ---------- modo repartidor ----------
 // Oculto para clientes: 5 toques en el título. Usa la clave del panel del local.
 // Enseña los pedidos en preparación/reparto a pantalla completa con lo que
@@ -444,6 +511,7 @@ barraCarrito.onclick = pintarCarrito;
 function atras() {
     if (pantalla === 'carrito' || pantalla === 'estado') { clearInterval(sondeo); pintarCarta(); return true; }
     if (pantalla === 'datos') { pintarCarrito(); return true; }
+    if (pantalla === 'ajustes') { pintarCarta(); return true; }
     if (pantalla === 'repartidor') { clearInterval(repSondeo); pintarCarta(); return true; }
     return false;           // en la carta: Android manda la app a segundo plano
 }

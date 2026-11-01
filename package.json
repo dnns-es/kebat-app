@@ -1,6 +1,6 @@
 {
     "name": "kebat",
-    "version": "0.2.1",
+    "version": "0.3.0",
     "private": true,
     "type": "module",
     "description": "App de pedidos a domicilio de Kebat: carta, carrito y envío del pedido con la ubicación del cliente",

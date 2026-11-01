@@ -159,6 +159,13 @@ main { padding: 12px 12px 96px; max-width: 560px; margin: 0 auto; }
 }
 .paso.hecho .punto { background: var(--verde); }
 
+/* Ajustes */
+.tarjeta-aj { background: var(--blanco); border: 1px solid var(--carton); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+.aj-fila { display: flex; justify-content: space-between; align-items: center; font-size: 16px; margin-bottom: 8px; }
+.aj-estado { min-height: 20px; font-size: 14px; color: var(--gris); margin-top: 8px; }
+.aj-estado a { color: #174ea6; }
+.aj-pie { text-align: center; color: var(--gris); font-size: 13px; margin-top: 18px; }
+
 /* Modo repartidor: tarjetas grandes, letra grande, botones de dedo gordo */
 .rep-card {
     background: var(--blanco); border: 2px solid var(--carton); border-radius: 16px;

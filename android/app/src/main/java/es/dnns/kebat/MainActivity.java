@@ -4,6 +4,12 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
+    @Override
+    public void onCreate(android.os.Bundle savedInstanceState) {
+        registerPlugin(KebatUpdate.class);      // actualización desde la propia app
+        super.onCreate(savedInstanceState);
+    }
+
     /** Botón atrás de Android: lo decide la app (volver a la carta, al carrito...).
      *  En la carta se manda a segundo plano sin cerrarla. */
     @Override
