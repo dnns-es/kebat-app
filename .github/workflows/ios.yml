@@ -89,6 +89,8 @@ jobs:
 
       - name: Sync iOS + pods
         run: |
+          # La app enseña y compara su versión completa (x.y.z.build) gracias a esto
+          echo "window.KEBAT_BUILD = $GITHUB_RUN_NUMBER;" > www/js/build.js
           npm ci
           npx cap sync ios
           cd ios/App && pod install --repo-update

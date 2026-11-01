@@ -331,6 +331,24 @@ function pintarEstado(codigo, estado) {
 const VERSION_WWW = '0.3.1';
 const PAGINA_IOS = 'https://descargas.dnns.es/7701cf39d1/kebat-ios/';
 
+// En iPhone la version completa lleva el numero de compilacion (0.3.1.8):
+// build.js lo rellena el workflow; en el navegador vale 0 y no se ensena.
+const BUILD = Number(window.KEBAT_BUILD) || 0;
+function versionCompleta() { return VERSION_WWW + (BUILD ? '.' + BUILD : ''); }
+
+// Hay entrega de iPhone mas nueva? Compara los 4 numeros contra el
+// version.json que publica el panel junto al .ipa.
+async function hayNuevaIos() {
+    const j = await (await fetch(PAGINA_IOS + 'version.json', { cache: 'no-store' })).json();
+    const x = String(j.version || '0').split('.').map(Number);
+    const y = [...VERSION_WWW.split('.').map(Number), BUILD];
+    for (let i = 0; i < 4; i++) {
+        if ((x[i] || 0) > (y[i] || 0)) return { nueva: true, version: j.version };
+        if ((x[i] || 0) < (y[i] || 0)) break;
+    }
+    return { nueva: false, version: j.version };
+}
+
 function plataforma() { return window.Capacitor?.getPlatform?.() || 'web'; }
 
 // Posición GPS: en el móvil, por el plugin nativo (pide el permiso como toca,
@@ -350,7 +368,7 @@ async function pintarAjustes() {
     pantalla = 'ajustes';
     cabecera('Ajustes', true);
     pintarBarraCarrito();
-    let version = VERSION_WWW;
+    let version = versionCompleta();
     try { if (pluginUpdate()) version = (await pluginUpdate().version()).version; } catch { /* la www vale */ }
     const telefono = carta?.telefono || '';
     vista.innerHTML = `
@@ -406,18 +424,11 @@ async function buscarActualizacion() {
                 catch (e) { estado.textContent = '⚠ ' + e.message; }
             };
         } else if (plataforma() === 'ios') {
-            const r = await fetch(SERVIDOR_DESCARGAS_LATEST, { cache: 'no-store' });
-            const j = await r.json();
-            // Más nueva de verdad (1.2.10 > 1.2.9), no simplemente distinta
-            const esMasNueva = (a, b) => {
-                const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
-                for (let i = 0; i < 3; i++) { if ((x[i] || 0) > (y[i] || 0)) return true; if ((x[i] || 0) < (y[i] || 0)) return false; }
-                return false;
-            };
-            if (!esMasNueva(j.version || '0', VERSION_WWW)) {
-                estado.textContent = '✓ Tienes la última versión (' + VERSION_WWW + ').';
+            const r = await hayNuevaIos();
+            if (!r.nueva) {
+                estado.textContent = '✓ Tienes la última versión (' + versionCompleta() + ').';
             } else {
-                estado.innerHTML = '<a class="btn actualizar" href="' + PAGINA_IOS + '" target="_blank" rel="noopener">⬇ Actualizar a la ' + esc(j.version) + '</a>';
+                estado.innerHTML = '<a class="btn actualizar" href="' + PAGINA_IOS + '" target="_blank" rel="noopener">⬇ Actualizar a la ' + esc(r.version) + '</a>';
             }
         } else {
             estado.textContent = 'En el navegador no hace falta: siempre ves la última.';
@@ -572,12 +583,9 @@ async function avisarActualizacionAlAbrir() {
                 catch (e) { franja.textContent = '⚠ ' + e.message; }
             };
         } else if (plataforma() === 'ios') {
-            const j = await (await fetch(SERVIDOR_DESCARGAS_LATEST, { cache: 'no-store' })).json();
-            const x = String(j.version || '0').split('.').map(Number), y = VERSION_WWW.split('.').map(Number);
-            let nueva = false;
-            for (let i = 0; i < 3; i++) { if ((x[i] || 0) > (y[i] || 0)) { nueva = true; break; } if ((x[i] || 0) < (y[i] || 0)) break; }
-            if (!nueva) return;
-            franja.textContent = '⬇ Hay versión nueva (' + j.version + '). Toca para actualizar';
+            const r = await hayNuevaIos();
+            if (!r.nueva) return;
+            franja.textContent = '⬇ Hay versión nueva (' + r.version + '). Toca para actualizar';
             franja.hidden = false;
             franja.onclick = () => window.open(PAGINA_IOS, '_blank');
         }
