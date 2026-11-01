@@ -47,5 +47,16 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Para adjuntar tu ubicación al pedido y que el repartidor te encuentre.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>es.dnns.kebat</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kebat</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
