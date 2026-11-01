@@ -364,8 +364,27 @@ async function pintarAjustes() {
             <div class="aj-fila"><span>¿Dudas con tu pedido?</span></div>
             <a class="btn gps" style="text-align:center;text-decoration:none" href="tel:${esc(telefono)}">📞 Llamar al local</a>
         </div>` : ''}
+        <div class="tarjeta-aj">
+            <div class="aj-fila"><span>Ubicación</span></div>
+            <button class="btn secundario" id="aj-gps">📍 Probar el GPS</button>
+            <div id="aj-gps-estado" class="aj-estado"></div>
+        </div>
         <p class="aj-pie">Kebat · pedidos a domicilio</p>`;
     $('#aj-buscar').onclick = buscarActualizacion;
+    $('#aj-gps').onclick = async () => {
+        const e = $('#aj-gps-estado');
+        const Geo = window.Capacitor?.Plugins?.Geolocation;
+        let txt = 'plataforma: ' + plataforma() + ' · plugin: ' + (Geo ? 'sí' : 'NO');
+        try {
+            if (Geo?.checkPermissions) txt += ' · permiso: ' + (await Geo.checkPermissions()).location;
+            e.textContent = txt + ' · pidiendo posición…';
+            const g = await obtenerPosicion();
+            e.textContent = txt + ' · ✓ ' + g.coords.latitude.toFixed(5) + ', ' + g.coords.longitude.toFixed(5) +
+                ' (±' + Math.round(g.coords.accuracy) + ' m)';
+        } catch (err) {
+            e.textContent = txt + ' · ⚠ ' + (err.message || err);
+        }
+    };
     window.scrollTo(0, 0);
 }
 
