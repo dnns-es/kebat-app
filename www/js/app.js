@@ -385,7 +385,13 @@ async function buscarActualizacion() {
         } else if (plataforma() === 'ios') {
             const r = await fetch(SERVIDOR_DESCARGAS_LATEST, { cache: 'no-store' });
             const j = await r.json();
-            if ((j.version || '') === VERSION_WWW) {
+            // Más nueva de verdad (1.2.10 > 1.2.9), no simplemente distinta
+            const esMasNueva = (a, b) => {
+                const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
+                for (let i = 0; i < 3; i++) { if ((x[i] || 0) > (y[i] || 0)) return true; if ((x[i] || 0) < (y[i] || 0)) return false; }
+                return false;
+            };
+            if (!esMasNueva(j.version || '0', VERSION_WWW)) {
                 estado.textContent = '✓ Tienes la última versión (' + VERSION_WWW + ').';
             } else {
                 estado.innerHTML = 'Hay versión nueva (' + esc(j.version) + '). ' +
