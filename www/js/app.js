@@ -231,17 +231,16 @@ function pintarDatos() {
         <button class="btn principal" id="d-enviar">Enviar pedido — ${eur(totalCarrito())}</button>
         <div id="d-error" class="error-red" style="padding:10px"></div>`;
     let pos = null;
-    $('#d-gps').onclick = () => {
+    $('#d-gps').onclick = async () => {
         $('#d-gps').textContent = '📡 Buscando señal…';
-        navigator.geolocation.getCurrentPosition(
-            (g) => {
-                pos = { lat: g.coords.latitude, lng: g.coords.longitude };
-                $('#d-gps').textContent = '✓ Ubicación adjuntada (precisión ' + Math.round(g.coords.accuracy) + ' m)';
-                $('#d-gps').classList.add('ok');
-            },
-            () => { $('#d-gps').textContent = '⚠ Sin señal GPS. Revisa el permiso de ubicación.'; },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
-        );
+        try {
+            const g = await obtenerPosicion();
+            pos = { lat: g.coords.latitude, lng: g.coords.longitude };
+            $('#d-gps').textContent = '✓ Ubicación adjuntada (precisión ' + Math.round(g.coords.accuracy) + ' m)';
+            $('#d-gps').classList.add('ok');
+        } catch {
+            $('#d-gps').textContent = '⚠ Sin señal GPS. Revisa el permiso de ubicación.';
+        }
     };
     $('#d-enviar').onclick = async () => {
         const datos = {
@@ -329,10 +328,22 @@ function pintarEstado(codigo, estado) {
 // Android: el plugin KebatUpdate descarga el APK y abre el instalador.
 // iPhone (Ad Hoc): no puede instalarse sola; se lleva a la página de instalación.
 
-const VERSION_WWW = '0.3.0';
+const VERSION_WWW = '0.3.1';
 const PAGINA_IOS = 'https://descargas.dnns.es/7701cf39d1/kebat-ios/';
 
 function plataforma() { return window.Capacitor?.getPlatform?.() || 'web'; }
+
+// Posición GPS: en el móvil, por el plugin nativo (pide el permiso como toca,
+// sobre todo en iPhone, donde el WebView a secas no siempre lo dispara);
+// en el navegador, el geolocation de toda la vida.
+async function obtenerPosicion() {
+    const Geo = window.Capacitor?.Plugins?.Geolocation;
+    if (Geo) {
+        return await Geo.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+    }
+    return new Promise((ok, mal) =>
+        navigator.geolocation.getCurrentPosition(ok, mal, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }));
+}
 function pluginUpdate() { return window.Capacitor?.Plugins?.KebatUpdate; }
 
 async function pintarAjustes() {
@@ -532,8 +543,8 @@ const pendiente = localStorage.getItem('kebat_pedido');
     if (pendiente && carta) pintarEstado(pendiente);
     // Permiso de ubicación al primer arranque (el sistema no deja pedirlo al
     // instalar): así al enviar el pedido ya está concedido y no corta el paso
-    if (!localStorage.getItem('kebat_gps_pedido')) {
-        localStorage.setItem('kebat_gps_pedido', '1');
-        navigator.geolocation?.getCurrentPosition(() => {}, () => {}, { timeout: 8000, maximumAge: 600000 });
+    if (!localStorage.getItem('kebat_gps_pedido2')) {
+        localStorage.setItem('kebat_gps_pedido2', '1');
+        try { await obtenerPosicion(); } catch { /* si lo deniega, el formulario lo reintenta */ }
     }
 })();
