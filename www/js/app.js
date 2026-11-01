@@ -286,7 +286,8 @@ function pintarDatos() {
 
 const PASOS = [
     ['nuevo', 'Pedido recibido'],
-    ['preparando', 'En la cocina'],
+    ['cocina', 'En la cocina'],
+    ['preparando', 'Preparando el envío'],
     ['reparto', 'En camino 🛵'],
     ['entregado', 'Entregado'],
 ];
@@ -508,7 +509,7 @@ async function pintarRepartidor() {
         <div class="rep-card ${p.estado}">
             <div class="rep-cab">
                 <b>${esc(p.codigo)}</b>
-                <span class="etiqueta-rep">${p.estado === 'reparto' ? '🛵 En reparto' : '👨‍🍳 En cocina'}</span>
+                <span class="etiqueta-rep">${p.estado === 'reparto' ? '🛵 En reparto' : '📦 Listo para llevar'}</span>
                 <span class="rep-total">${eur(p.total)}</span>
             </div>
             <div class="rep-dir">📍 ${esc(p.direccion)}${p.poblacion ? ', ' + esc(p.poblacion) : ''}</div>
